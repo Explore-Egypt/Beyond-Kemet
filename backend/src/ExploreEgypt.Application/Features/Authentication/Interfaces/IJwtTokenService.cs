@@ -1,4 +1,4 @@
-﻿using ExploreEgypt.Application.Features.Authentication.DTOs;
+using ExploreEgypt.Application.Features.Authentication.DTOs;
 
 namespace ExploreEgypt.Application.Features.Authentication.Interfaces;
 
@@ -8,5 +8,6 @@ public interface IJwtTokenService
         Guid userId,
         string email,
         string fullName,
-        IList<string> roles);
+        IList<string> roles,
+        string securityStamp);
 }

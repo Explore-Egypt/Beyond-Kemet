@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ExploreEgypt.Application.Features.Authentication.DTOs;
@@ -21,8 +21,15 @@ public class JwtTokenService : IJwtTokenService
         Guid userId,
         string email,
         string fullName,
-        IList<string> roles)
+        IList<string> roles,
+        string securityStamp)
     {
+        if (string.IsNullOrWhiteSpace(securityStamp))
+        {
+            throw new InvalidOperationException(
+                "Cannot issue a token without a security stamp.");
+        }
+
         var key = _configuration["Jwt:Key"]
             ?? throw new InvalidOperationException("JWT Key is missing.");
 
@@ -35,6 +42,12 @@ public class JwtTokenService : IJwtTokenService
         var expirationMinutes = _configuration.GetValue<int?>(
             "Jwt:ExpirationMinutes") ?? 60;
 
+        if (expirationMinutes <= 0)
+        {
+            throw new InvalidOperationException(
+                "JWT expiration must be greater than zero.");
+        }
+
         var expiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes);
 
         var claims = new List<Claim>
@@ -44,7 +57,8 @@ public class JwtTokenService : IJwtTokenService
             new Claim(JwtRegisteredClaimNames.Email, email),
             new Claim(ClaimTypes.Email, email),
             new Claim(ClaimTypes.Name, fullName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("security_stamp", securityStamp)
         };
 
         foreach (var role in roles)
@@ -72,11 +86,9 @@ public class JwtTokenService : IJwtTokenService
 
         var securityToken = tokenHandler.CreateToken(tokenDescriptor);
 
-        var token = tokenHandler.WriteToken(securityToken);
-
         return new JwtTokenResult
         {
-            Token = token,
+            Token = tokenHandler.WriteToken(securityToken),
             ExpiresAt = expiresAt
         };
     }

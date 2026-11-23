@@ -1,5 +1,6 @@
-using ExploreEgypt.Infrastructure.Identity;
 using ExploreEgypt.Application.Features.Authentication.Interfaces;
+using ExploreEgypt.Application.Features.Users.Interfaces;
+using ExploreEgypt.Infrastructure.Identity;
 using ExploreEgypt.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +32,8 @@ public static class DependencyInjection
                 options.Password.RequireNonAlphanumeric = false;
 
                 options.Lockout.MaxFailedAccessAttempts = 5;
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.Lockout.DefaultLockoutTimeSpan =
+                    TimeSpan.FromMinutes(15);
 
                 options.User.RequireUniqueEmail = true;
             })
@@ -42,6 +44,7 @@ public static class DependencyInjection
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
 
         return services;
     }
