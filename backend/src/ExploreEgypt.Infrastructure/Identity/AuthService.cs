@@ -1,4 +1,4 @@
-﻿using ExploreEgypt.Application.Features.Authentication.DTOs;
+using ExploreEgypt.Application.Features.Authentication.DTOs;
 using ExploreEgypt.Application.Features.Authentication.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
@@ -22,11 +22,15 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
+        var email = request.Email.Trim();
+
         var user = new ApplicationUser
         {
-            UserName = request.Email.Trim(),
-            Email = request.Email.Trim(),
-            FullName = request.FullName.Trim()
+            UserName = email,
+            Email = email,
+            FullName = request.FullName.Trim(),
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
         };
 
         var createResult = await _userManager.CreateAsync(
@@ -69,7 +73,8 @@ public class AuthService : IAuthService
             user.Id,
             user.Email!,
             user.FullName!,
-            roles);
+            roles,
+            user.SecurityStamp ?? throw new InvalidOperationException("User security stamp is missing."));
 
         return new AuthResponse
         {
@@ -119,13 +124,23 @@ public class AuthService : IAuthService
             };
         }
 
+        if (!user.IsActive)
+        {
+            return new AuthResponse
+            {
+                Succeeded = false,
+                Message = "Account is inactive. Please contact support."
+            };
+        }
+
         var roles = await _userManager.GetRolesAsync(user);
 
         var tokenResult = _jwtTokenService.GenerateToken(
             user.Id,
             user.Email!,
             user.FullName ?? string.Empty,
-            roles);
+            roles,
+            user.SecurityStamp ?? throw new InvalidOperationException("User security stamp is missing."));
 
         return new AuthResponse
         {
